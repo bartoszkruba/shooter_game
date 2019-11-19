@@ -585,7 +585,7 @@ class GameScreen(
             if (!removed) removed = checkIfOutsideViewport(entry.value, entry.key)
             if (!removed) removed = checkOpponentCollisions(entry.value, entry.key)
             if (!removed) removed = checkPlayerCollision(entry.value, entry.key)
-            if (!removed) removed = checkWallsCollisions(entry.value, entry.key)
+            if (!removed) removed = checkWallsCollisions(entry.value, entry.key, delta)
         }
     }
 
@@ -629,12 +629,28 @@ class GameScreen(
         return false
     }
 
-    private fun checkWallsCollisions(projectile: Projectile, key: String): Boolean {
+    private fun checkWallsCollisions(projectile: Projectile, key: String, delta: Float): Boolean {
         for (zone in getZonesForCircle(projectile.bounds)) {
             if (wallMatrix[zone] != null) for (i in 0 until wallMatrix[zone]!!.size) {
                 if (Intersector.overlaps(projectile.bounds, wallMatrix[zone]!![i].bounds)) {
-                    removeProjectile(projectile, key)
-                    return true
+                    if (projectile is BouncerProjectile) {
+                        projectile.bounds.x -= delta * projectile.velocity.x * projectile.speed * 2
+                        projectile.bounds.y -= delta * projectile.velocity.y * projectile.speed * 2
+                        if (projectile.bounds.x
+                                < wallMatrix[zone]!![i].bounds.x ||
+                                projectile.bounds.x + BOUNCER_PROJECTILE_WIDTH >
+                                wallMatrix[zone]!![i].bounds.x + WALL_SPRITE_WIDTH) {
+
+                            projectile.velocity.x *= -1
+                        } else {
+                            projectile.velocity.y *= -1
+                        }
+                        bouncerShotSoundEffect.play()
+                        return false
+                    } else {
+                        removeProjectile(projectile, key)
+                        return true
+                    }
                 }
             }
         }

@@ -40,7 +40,7 @@ let continueLooping = true;
 
 const matrix = getZonesMatrix();
 
-async function physicLoop(broadcastNewProjectile, broadcastNewExplosion) {
+async function physicLoop(broadcastNewProjectile, broadcastNewExplosion, broadcastRemoveProjectile) {
     weaponRespawnLoop().catch(e => console.log(e));
     while (continueLooping) {
         const currentTime = new Date().getTime();
@@ -52,7 +52,7 @@ async function physicLoop(broadcastNewProjectile, broadcastNewExplosion) {
                 agent.invisible = false;
             checkControls(agent, delta, broadcastNewProjectile)
         }
-        calculateProjectilePositions(delta, broadcastNewExplosion);
+        calculateProjectilePositions(delta, broadcastNewExplosion, broadcastRemoveProjectile);
 
         await sleep(1000 / 60)
     }
@@ -270,8 +270,16 @@ const spawnPistolPickupAtRandomPlace = () => {
     pickups.push(weapon)
 };
 
-function calculateProjectilePositions(delta, broadcastNewExplosion) {
+function calculateProjectilePositions(delta, broadcastNewExplosion, broadcastRemoveProjectile) {
     for (let projectile of projectiles) {
+        if (projectile.type === ProjectileType.BOUNCER && new Date().getTime() -
+            projectile.created > constants.BOUNCER_PROJECTILE_LIFETIME * 1000) {
+            console.log(projectile.created);
+            console.log("Removing projectile");
+            removeProjectile(projectile.id);
+            broadcastRemoveProjectile(projectile);
+        }
+
         const x = projectile.bounds.position.x + projectile.velocity.x * delta * projectile.speed;
         const y = projectile.bounds.position.y + projectile.velocity.y * delta * projectile.speed;
 
@@ -315,13 +323,30 @@ function calculateProjectilePositions(delta, broadcastNewExplosion) {
             if (matrix.walls[zone] != null) for (let wall of matrix.walls[zone]) {
                 if (Matter.SAT.collides(wall.bounds, projectile.bounds).collided) {
 
-                    if (projectile.type === ProjectileType.BAZOOKA)
+                    if (projectile.type === ProjectileType.BAZOOKA) {
                         spawnBazookaExplosion(projectile.bounds.position.x, projectile.bounds.position.y,
                             broadcastNewExplosion);
-
-                    removeProjectile(projectile.id);
-                    removed = true;
-                    break;
+                        removeProjectile(projectile.id);
+                        removed = true;
+                        break;
+                    } else if (projectile.type === ProjectileType.BOUNCER) {
+                        moveProjectile(projectile,
+                            projectile.bounds.position.x - delta * projectile.velocity.x * projectile.speed * 2,
+                            projectile.bounds.position.y - delta * projectile.velocity.y * projectile.speed * 2);
+                        if (projectile.bounds.position.x - 0.5 * constants.BOUNCER_PROJECTILE_WIDTH / 2
+                            < wall.bounds.position.x - 0.5 * constants.WALL_SPRITE_WIDTH ||
+                            projectile.bounds.position.x + 0.5 * constants.BOUNCER_PROJECTILE_WIDTH
+                            > wall.bounds.position.x + 0.5 * constants.WALL_SPRITE_WIDTH) {
+                            projectile.velocity.x *= -1;
+                        } else {
+                            projectile.velocity.y *= -1;
+                        }
+                        break;
+                    } else {
+                        removeProjectile(projectile.id);
+                        removed = true;
+                        break;
+                    }
                 }
             }
             if (removed) break

@@ -51,7 +51,7 @@ class Server {
         private var machineGunPickupPool = pool { MachineGunPickup(texture = machineGunTexture) }
         private var shotgunPickupPool = pool { ShotgunPickup(texture = shotgunTexture) }
         private var bazookaPickupPool = pool { BazookaPickup(texture = bazookaTexture) }
-        private var bouncerPickupPool = pool {BouncerPickup(texture = bouncerTexture)}
+        private var bouncerPickupPool = pool { BouncerPickup(texture = bouncerTexture) }
 
         val opponents = ConcurrentHashMap<String, Opponent>()
         private lateinit var playerTextures: TextureAtlas
@@ -117,6 +117,7 @@ class Server {
                     .on("wallData") { processWallData(it) }
                     .on("newExplosion") { processNewExplosion(it) }
                     .on("scoreboardData") { processScoreboardData(it) }
+                    .on("deleteProjectile") { processRemoveProjectile(it) }
         }
 
         private fun processScoreboardData(data: kotlin.Array<Any>) {
@@ -296,6 +297,10 @@ class Server {
             }
         }
 
+        private fun processRemoveProjectile(data: kotlin.Array<Any>) {
+            projectiles.remove((data[0] as JSONObject).getString("id"))
+        }
+
         private fun processNewExplosion(data: kotlin.Array<Any>) {
             val explosion = data[0] as JSONObject
             val x = explosion.getDouble("x").toFloat()
@@ -322,7 +327,7 @@ class Server {
                 projectiles[id] = when (type) {
                     ProjectileType.PISTOL -> pistolProjectilePool.obtain()
                     ProjectileType.SHOTGUN -> shotgunProjectilePool.obtain()
-                    ProjectileType.BAZOOKA ->  bazookaProjectilePool.obtain()
+                    ProjectileType.BAZOOKA -> bazookaProjectilePool.obtain()
                     ProjectileType.BOUNCER -> bouncerProjectilePool.obtain()
                     else -> machineGunProjectilePool.obtain()
                 }.apply {
