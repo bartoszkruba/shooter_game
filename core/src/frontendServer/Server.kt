@@ -11,10 +11,7 @@ import com.mygdx.game.model.explosion.BazookaExplosion
 import com.mygdx.game.model.obstacles.Wall
 import com.mygdx.game.model.pickup.*
 import com.mygdx.game.model.projectile.*
-import com.mygdx.game.model.weapon.Bazooka
-import com.mygdx.game.model.weapon.MachineGun
-import com.mygdx.game.model.weapon.Pistol
-import com.mygdx.game.model.weapon.Shotgun
+import com.mygdx.game.model.weapon.*
 import com.mygdx.game.settings.*
 import com.mygdx.game.util.getZonesForRectangle
 import io.socket.client.IO
@@ -34,6 +31,7 @@ class Server {
         lateinit var machineGunTexture: Texture
         lateinit var shotgunTexture: Texture
         lateinit var bazookaTexture: Texture
+        lateinit var bouncerTexture: Texture
         var shouldPlayReload = false
 
         private lateinit var player: Player
@@ -43,6 +41,7 @@ class Server {
         val machineGunProjectilePool = pool { MachineGunProjectile(texture = projectileTexture) }
         val shotgunProjectilePool = pool { ShotgunProjectile(texture = projectileTexture) }
         val bazookaProjectilePool = pool { BazookaProjectile(texture = projectileTexture) }
+        val bouncerProjectilePool = pool { BouncerProjectile(texture = projectileTexture) }
 
         lateinit var bazookaExplosionTextureAtlas: TextureAtlas
         val bazookaExplosionPool = pool { BazookaExplosion(textureAtlas = bazookaExplosionTextureAtlas) }
@@ -52,6 +51,7 @@ class Server {
         private var machineGunPickupPool = pool { MachineGunPickup(texture = machineGunTexture) }
         private var shotgunPickupPool = pool { ShotgunPickup(texture = shotgunTexture) }
         private var bazookaPickupPool = pool { BazookaPickup(texture = bazookaTexture) }
+        private var bouncerPickupPool = pool {BouncerPickup(texture = bouncerTexture)}
 
         val opponents = ConcurrentHashMap<String, Opponent>()
         private lateinit var playerTextures: TextureAtlas
@@ -77,15 +77,17 @@ class Server {
         }
 
         fun configSocketEvents(projectileTexture: Texture, pistolTexture: Texture, machineGunTexture: Texture,
-                               shotgunTexture: Texture, bazookaTexture: Texture, playerTextures: TextureAtlas,
-                               healthBarTexture: Texture, bazookaExplosionTextureAtlas: TextureAtlas,
-                               wallMatrix: HashMap<String, Array<Wall>>, wallTexture: Texture, walls: Array<Wall>) {
+                               shotgunTexture: Texture, bazookaTexture: Texture, bouncerTexture: Texture,
+                               playerTextures: TextureAtlas, healthBarTexture: Texture,
+                               bazookaExplosionTextureAtlas: TextureAtlas, wallMatrix: HashMap<String, Array<Wall>>,
+                               wallTexture: Texture, walls: Array<Wall>) {
 
             this.projectileTexture = projectileTexture
             this.pistolTexture = pistolTexture
             this.machineGunTexture = machineGunTexture
             this.shotgunTexture = shotgunTexture
             this.bazookaTexture = bazookaTexture
+            this.bouncerTexture = bouncerTexture
 
             this.playerTextures = playerTextures
             this.healthBarTexture = healthBarTexture
@@ -161,6 +163,7 @@ class Server {
                     is MachineGunPickup -> machineGunPickupPool.free(pickup)
                     is ShotgunPickup -> shotgunPickupPool.free(pickup)
                     is BazookaPickup -> bazookaPickupPool.free(pickup)
+                    is BouncerPickup -> bouncerPickupPool.free(pickup)
                 }
             }
 
@@ -177,6 +180,7 @@ class Server {
                     ProjectileType.PISTOL -> pistolPickupPool.obtain()
                     ProjectileType.SHOTGUN -> shotgunPickupPool.obtain()
                     ProjectileType.BAZOOKA -> bazookaPickupPool.obtain()
+                    ProjectileType.BOUNCER -> bouncerPickupPool.obtain()
                     else -> machineGunPickupPool.obtain()
                 }.apply { setPosition(x, y) }
             }
@@ -201,6 +205,7 @@ class Server {
                         ProjectileType.PISTOL -> pistolProjectilePool.obtain()
                         ProjectileType.SHOTGUN -> shotgunProjectilePool.obtain()
                         ProjectileType.BAZOOKA -> bazookaProjectilePool.obtain()
+                        ProjectileType.BOUNCER -> bouncerProjectilePool.obtain()
                         else -> machineGunProjectilePool.obtain()
                     }.apply {
                         setPosition(x, y)
@@ -243,6 +248,7 @@ class Server {
                                 ProjectileType.MACHINE_GUN -> player.weapon = MachineGun()
                                 ProjectileType.SHOTGUN -> player.weapon = Shotgun()
                                 ProjectileType.BAZOOKA -> player.weapon = Bazooka()
+                                ProjectileType.BOUNCER -> player.weapon = Bouncer()
                             }
                         }
                         val bulletsLeft = agent.getInt("bulletsLeft")
@@ -316,9 +322,8 @@ class Server {
                 projectiles[id] = when (type) {
                     ProjectileType.PISTOL -> pistolProjectilePool.obtain()
                     ProjectileType.SHOTGUN -> shotgunProjectilePool.obtain()
-                    ProjectileType.BAZOOKA -> {
-                        bazookaProjectilePool.obtain()
-                    }
+                    ProjectileType.BAZOOKA ->  bazookaProjectilePool.obtain()
+                    ProjectileType.BOUNCER -> bouncerProjectilePool.obtain()
                     else -> machineGunProjectilePool.obtain()
                 }.apply {
                     setPosition(x, y)

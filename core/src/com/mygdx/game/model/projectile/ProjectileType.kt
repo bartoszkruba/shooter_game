@@ -6,5 +6,6 @@ class ProjectileType {
         const val MACHINE_GUN = "mg"
         const val SHOTGUN = "sg"
         const val BAZOOKA = "bz"
+        const val BOUNCER = "bn"
     }
 }

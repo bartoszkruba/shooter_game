@@ -28,6 +28,7 @@ import com.mygdx.game.model.agent.Player
 import com.mygdx.game.model.explosion.BazookaExplosion
 import com.mygdx.game.model.obstacles.Wall
 import com.mygdx.game.model.projectile.*
+import com.mygdx.game.model.weapon.Bouncer
 import ktx.assets.pool
 import ktx.collections.iterate
 
@@ -51,6 +52,7 @@ class GameScreen(
     private val machineGunTexture = assets.get("images/machine_gun.png", Texture::class.java)
     private val shotgunTexture = assets.get("images/shotgun.png", Texture::class.java)
     private val bazookaTexture = assets.get("images/bazooka.png", Texture::class.java)
+    private val bouncerTexture = assets.get("images/bouncer.png", Texture::class.java)
 
     private val music = assets.get("music/ingame_music.ogg", Music::class.java)
 
@@ -93,6 +95,7 @@ class GameScreen(
     private val machineGunProjectilePool: Pool<MachineGunProjectile>
     private val shotgunProjectilePool: Pool<ShotgunProjectile>
     private val bazookaProjectilePool: Pool<BazookaProjectile>
+    private val bouncerProjectilePool: Pool<BouncerProjectile>
 
     private val bazookaExplosionPool: Pool<BazookaExplosion>
     private val explosions: Array<BazookaExplosion>
@@ -137,7 +140,7 @@ class GameScreen(
         }
         Server.connectionSocket()
         Server.configSocketEvents(projectileTexture, pistolTexture, machineGunTexture, shotgunTexture, bazookaTexture,
-                playerAtlas, healthBarTexture, bazookaExplosionAtlas, wallMatrix, wallTexture, walls)
+                bouncerTexture, playerAtlas, healthBarTexture, bazookaExplosionAtlas, wallMatrix, wallTexture, walls)
 
         projectiles = Server.projectiles
         opponents = Server.opponents
@@ -146,6 +149,7 @@ class GameScreen(
         machineGunProjectilePool = Server.machineGunProjectilePool
         shotgunProjectilePool = Server.shotgunProjectilePool
         bazookaProjectilePool = Server.bazookaProjectilePool
+        bouncerProjectilePool = Server.bouncerProjectilePool
 
         bazookaExplosionPool = Server.bazookaExplosionPool
         explosions = Server.explosions
@@ -568,6 +572,7 @@ class GameScreen(
                     entry.value is ShotgunProjectile -> shotgunShotSoundEffect.play(0.14f)
                     entry.value is MachineGunProjectile -> machineGunShotSoundEffect.play()
                     entry.value is BazookaProjectile -> bazookaShotSoundEffect.play()
+                    entry.value is BouncerProjectile -> println("Should play bouncer")
                     else -> pistolShotSoundEffect.play(1.5f)
                 }
             }
@@ -641,6 +646,7 @@ class GameScreen(
             is MachineGunProjectile -> machineGunProjectilePool.free(projectile)
             is ShotgunProjectile -> shotgunProjectilePool.free(projectile)
             is BazookaProjectile -> bazookaProjectilePool.free(projectile)
+            is BouncerProjectile -> bouncerProjectilePool.free(projectile)
         }
         projectiles.remove(key)
     }
