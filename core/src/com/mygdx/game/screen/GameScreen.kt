@@ -62,6 +62,7 @@ class GameScreen(
     private val shotgunShotSoundEffect = assets.get("sounds/shotgun_shot.wav", Sound::class.java)
     private val machineGunShotSoundEffect = assets.get("sounds/machine_gun_shot.wav", Sound::class.java)
     private val bazookaShotSoundEffect = assets.get("sounds/bazooka_shot.mp3", Sound::class.java)
+    private val bouncerShotSoundEffect = assets.get("sounds/bouncer_shot.mp3", Sound::class.java)
 
     private val bazookaExplosionSoundEffect = assets.get("sounds/bazooka_explosion.mp3", Sound::class.java)
 
@@ -572,7 +573,7 @@ class GameScreen(
                     entry.value is ShotgunProjectile -> shotgunShotSoundEffect.play(0.14f)
                     entry.value is MachineGunProjectile -> machineGunShotSoundEffect.play()
                     entry.value is BazookaProjectile -> bazookaShotSoundEffect.play()
-                    entry.value is BouncerProjectile -> println("Should play bouncer")
+                    entry.value is BouncerProjectile -> bouncerShotSoundEffect.play()
                     else -> pistolShotSoundEffect.play(1.5f)
                 }
             }
